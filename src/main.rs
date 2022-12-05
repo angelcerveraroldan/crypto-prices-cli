@@ -1,26 +1,19 @@
-use std::env;
+extern crate core;
 
-use serde::Serialize;
+use std::fmt::Error;
 
-use crate::candlesticks::{Api, Request};
+use crate::candlesticks::Api;
+use crate::terminal::Terminal;
 
 mod candlesticks;
+mod utils;
+mod terminal;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<String> = env::args().collect();
+async fn main() -> Result<(), Error> {
+    let mut term = Terminal::default().expect("Could not start default terminal");
 
-    let default_symbol = String::from("BTC_USDT");
-    let default_interval = String::from("1m");
+    term.run().await;
 
-    // If no currency is specific, then check btc to usd
-    let currency = args.get(1).unwrap_or(&default_symbol);
-    let interval = args.get(2).unwrap_or(&default_interval);
-
-    let api = Api::from("https://www.mexc.com");
-
-    let req = api.make_request(currency, interval).await.expect("Request failed");
-    println!("{:#?}", req);
-    
     Ok(())
 }

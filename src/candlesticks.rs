@@ -27,11 +27,12 @@ impl Api {
     pub async fn make_request(&self) -> Result<Request, Box<dyn std::error::Error>> {
         let url = format!("{}/open/api/v2/market/kline?symbol={}&interval={}", self.base_url, self.symbol, self.interval);
 
-        let req = reqwest::get(url)
+        let mut req = reqwest::get(url)
             .await?
             .json::<Request>()
             .await?;
 
+        req.data.reverse();
         Ok(req)
     }
 }
@@ -71,5 +72,4 @@ fn str_or_f64<'de, D: Deserializer<'de>>(deserializer: D) -> Result<f64, D::Erro
         _ => return Err(de::Error::custom("Wrong type. String or number expected"))
     })
 }
-
 

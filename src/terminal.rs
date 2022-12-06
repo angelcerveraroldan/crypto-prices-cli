@@ -28,6 +28,7 @@ pub struct Terminal {
     info: Api,
     _stdout: RawTerminal<io::Stdout>,
     quit: bool,
+    update: bool,
 }
 
 impl Terminal {
@@ -39,6 +40,7 @@ impl Terminal {
             info: Api::mexc(),
             _stdout: stdout().into_raw_mode()?,
             quit: false,
+            update: true,
         })
     }
 
@@ -47,19 +49,27 @@ impl Terminal {
         println!("{}", termion::cursor::Hide);
         println!("{}", termion::clear::All);
 
-        let req = self.make_request().await;
-
         loop {
             if self.quit {
                 break;
             }
 
-            match &req {
-                None => {}
-                Some(req) => {
-                    self.display_first_lines();
-                    self.display_api_data(req);
+            if self.update {
+                self.fetching_data_screen();
+
+                let req = self.make_request().await;
+
+                match &req {
+                    None => {}
+                    Some(req) => {
+                        self.display_first_lines();
+                        self.display_api_data(req);
+                        self.last_line();
+                        self.display_commands();
+                    }
                 }
+
+                self.update = false;
             }
 
             let key = self.await_keypress();
@@ -73,6 +83,7 @@ impl Terminal {
     fn handle_keypress(&mut self, key: Key) {
         match key {
             Key::Ctrl('q') => { self.quit = true; }
+            Key::Ctrl('u') => { self.update = true; }
             _ => {}
         }
     }
@@ -86,7 +97,7 @@ impl Terminal {
     }
 
     fn display_api_data(&self, req: &Request) {
-        for i in 0..self.size.height - 4 {
+        for i in 0..self.size.height - 8 {
             let line: String = match req.data.get(i as usize) {
                 Some(candlestick) => format!("{}", self.candlestick_line(candlestick)),
                 None => String::default()
@@ -126,6 +137,39 @@ impl Terminal {
                  pad(" High ", space, "─"),
                  pad(" Low ", space, "─"),
         );
+    }
+
+    fn last_line(&self) {
+        // The -2 account for the |'s with which the line must start
+        let line_length = self.size.width - 2;
+        let space = ((self.size.width - 3) / 5 - 1) as usize;
+
+        println!(" └{}┴{}┴{}┴{}┴{}┘\r",
+                 pad("", space, "─"),
+                 pad("", space, "─"),
+                 pad("", space, "─"),
+                 pad("", space, "─"),
+                 pad("", space, "─"),
+        )
+    }
+
+    fn display_commands(&self) {
+        println!("  Commands: \n\r  \tQuit: Ctr+Q \t Update data: Ctr+U \r");
+    }
+
+    fn fetching_data_screen(&self) {
+        println!("{}", termion::cursor::Hide);
+        println!("{}", termion::clear::All);
+
+        let message = "Fetching data...";
+
+        for i in 0..self.size.height {
+            if i == self.size.height / 3 {
+                println!("{}{}\r", " ".repeat(((self.size.width) as usize - message.len()) / 2 as usize), message);
+            } else {
+                println!("\r");
+            }
+        }
     }
 
     async fn make_request(&self) -> Option<Request> {

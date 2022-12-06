@@ -4,9 +4,9 @@ use serde_json::Value;
 use crate::utils::seconds_to_date;
 
 pub struct Api {
-    base_url: String,
-    symbol: String,
-    interval: String,
+    pub base_url: String,
+    pub symbol: String,
+    pub interval: String,
 }
 
 impl Api {
@@ -48,19 +48,19 @@ pub struct Request {
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct CandleStick {
-    timestamp: u32,
+    pub timestamp: u32,
     #[serde(deserialize_with = "str_or_f64")]
-    open: f64,
+    pub open: f64,
     #[serde(deserialize_with = "str_or_f64")]
-    close: f64,
+    pub close: f64,
     #[serde(deserialize_with = "str_or_f64")]
-    high: f64,
+    pub high: f64,
     #[serde(deserialize_with = "str_or_f64")]
-    low: f64,
+    pub low: f64,
     #[serde(deserialize_with = "str_or_f64")]
-    volume: f64,
+    pub volume: f64,
     #[serde(deserialize_with = "str_or_f64")]
-    amount: f64,
+    pub amount: f64,
 }
 
 // Deserializer
@@ -72,9 +72,4 @@ fn str_or_f64<'de, D: Deserializer<'de>>(deserializer: D) -> Result<f64, D::Erro
     })
 }
 
-impl CandleStick {
-    pub fn to_str(&self) -> String {
-        format!("Open: {}, open: {}, high: {}", seconds_to_date(self.timestamp), self.open, self.high)
-    }
-}
 
